@@ -16,7 +16,11 @@ interface InvoiceRow {
 class InvoiceService {
   static async list( userId: string, status?: string, operator?: string): Promise<Invoice[]> {
     let q = db<InvoiceRow>('invoices').where({ userId: userId });
-    if (status) q = q.andWhereRaw(" status "+ operator + " '"+ status +"'");
+    if (status && operator) {
+      // Usar el método where de Knex que acepta operador como string
+      // Knex validará internamente que el operador sea válido
+      q = q.andWhere('status', operator, status);
+    }
     const rows = await q.select();
     const invoices = rows.map(row => ({
       id: row.id,
