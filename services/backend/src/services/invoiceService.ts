@@ -71,9 +71,27 @@ class InvoiceService {
     if (!invoice) {
       throw new Error('Invoice not found');
     }
+
+    if (!pdfName || typeof pdfName !== 'string') {
+      throw new Error('Invalid PDF name');
+    }
+
+    const nombreLimpio = path.basename(pdfName);
+
+    if (!nombreLimpio.endsWith('.pdf')) {
+      throw new Error('Only PDF files are allowed');
+    }
+
+    const dirBase = path.resolve('/invoices');
+    const pathCompleto = path.join(dirBase, nombreLimpio);
+
+    // Linea final de "defensa", no permite salir del directorio /invoices
+    if (!pathCompleto.startsWith(dirBase)) {
+      throw new Error('Access denied');
+    }
+
     try {
-      const filePath = `/invoices/${pdfName}`;
-      const content = await fs.readFile(filePath, 'utf-8');
+      const content = await fs.readFile(pathCompleto);
       return content;
     } catch (error) {
       // send the error to the standard output
