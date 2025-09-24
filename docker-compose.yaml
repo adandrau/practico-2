@@ -19,6 +19,7 @@ services:
     ports:
       - "5000:3000"
     environment:
+      - JWT_SECRET=supersecretkey
       - DB_HOST=postgres
       - DB_USER=user
       - DB_PASS=password
