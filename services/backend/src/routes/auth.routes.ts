@@ -1,36 +1,20 @@
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
-import AuthService from '../services/authService';
+import routes from '../controllers/authController';
 
 const router = Router();
 
-router.get('/', (_req, res) => res.json({ ok: true }));
+router.get('/', routes.ping);
 
-router.post('/login', async (req, res) => {
-  try {
-    const { username, email, password } = req.body;
-    const identifier = (username ?? email ?? '').toString().trim();
+router.post('/login', routes.login);
 
-    if (!identifier || !password) {
-      return res.status(400).json({ message: 'username/email and password required' });
-    }
+// POST /auth/forgot-password
+router.post('/forgot-password', routes.forgotPassword);
 
-    const user = await AuthService.authenticate(identifier, password);
+// POST /auth/reset-password
+router.post('/reset-password', routes.resetPassword);
 
-    const token = jwt.sign(
-      { sub: user.id, username: user.username },
-      process.env.JWT_SECRET || 'dev_secret',
-      { expiresIn: '1h' }
-    );
+// POST /auth/set-password
+router.post('/set-password', routes.setPassword);
 
-    return res.json({ token });
-  } catch (e: any) {
-    return res.status(401).json({ message: e.message || 'Login failed' });
-  }
-});
-
-router.post('/forgot-password', (_req, res) => res.status(501).json({ message: 'Not implemented' }));
-router.post('/reset-password',  (_req, res) => res.status(501).json({ message: 'Not implemented' }));
-router.post('/set-password',    (_req, res) => res.status(501).json({ message: 'Not implemented' }));
 
 export default router;

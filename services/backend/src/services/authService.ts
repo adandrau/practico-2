@@ -45,11 +45,11 @@ class AuthService {
     const template = `
       <html>
         <body>
-  <h1>Hello <%= first %> <%= last %></h1>
-  <p>Click <a href="<%= link %>">here</a> to activate your account.</p>
+          <h1>Hello ${user.first_name} ${user.last_name}</h1>
+          <p>Click <a href="${ link }">here</a> to activate your account.</p>
         </body>
       </html>`;
-    const htmlBody = ejs.render(template,{ first: user.first_name, last: user.last_name, link });
+    const htmlBody = ejs.render(template);
     
     await transporter.sendMail({
       from: "info@example.com",
@@ -76,16 +76,15 @@ class AuthService {
     return existing;
   }
 
-static async authenticate(identifier: string, password: string) {
-  const user = await db<UserRow>('users')
-    .where(q => q.where('username', identifier).orWhere('email', identifier))
-    .andWhere('activated', true)
-    .first();
-
-  if (!user) throw new Error('Invalid email or not activated');
-  if (password !== user.password) throw new Error('Invalid password');
-  return user;
-}
+  static async authenticate(username: string, password: string) {
+    const user = await db<UserRow>('users')
+      .where({ username })
+      .andWhere('activated', true)
+      .first();
+    if (!user) throw new Error('Invalid email or not activated');
+    if (password != user.password) throw new Error('Invalid password');
+    return user;
+  }
 
   static async sendResetPasswordEmail(email: string) {
     const user = await db<UserRow>('users')
