@@ -17,7 +17,7 @@ services:
       dockerfile: DockerFile
     container_name: backend
     ports:
-      - "5000:3000"
+      - "5500:3000"
     environment:
       - DB_HOST=postgres
       - DB_USER=user
@@ -42,7 +42,7 @@ services:
     
   #add a postgres service
   postgres:
-    image: postgres:latest
+    image: postgres:17
     container_name: postgres
     environment:
       POSTGRES_USER: user

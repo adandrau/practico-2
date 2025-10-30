@@ -14,7 +14,7 @@ def get_last_email_body():
     data = resp.json()
 
     if not data["items"]:
-        return None  # no emails received yet
+        return None
 
     last_email = data["items"][0]
     body = last_email["Content"]["Body"]
@@ -62,7 +62,44 @@ def test_login(setup_create_user):
     username = setup_create_user[0]
     password = setup_create_user[1]
 
+    print(f"Testing login for user: {username} with password: {password}")
+
     response = requests.post("http://localhost:5500/auth/login", json={"username": username, "password": password})
+
+    print ("Response login:", response.text)
     auth_token = response.json()["token"]
     assert auth_token
 
+def test_sql_injection(setup_create_user):
+    # Demuestra que el parámetro 'operator' permite inyectar SQL y bypasear el control de acceso
+    username = setup_create_user[0]
+    password = setup_create_user[1]
+
+    # Hacemos login para traernos el tokencito
+    response = requests.post("http://localhost:5500/auth/login", 
+                            json={"username": username, "password": password})
+    auth_token = response.json()["token"]
+    assert auth_token
+
+    # Este es el payload que inyecta el SQL para traernos todas las facturas (jaja re argentino, yo quiero dulces)
+    smooth_operator = "='paid' OR '1'='1' OR status="
+    
+    response = requests.get(
+        "http://localhost:5500/invoices",
+        params={
+            "status": "paid",
+            "operator": smooth_operator
+        },
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+
+    assert response.status_code == 200
+    
+    las_facturas_del_dia = response.json()
+    
+    if len(las_facturas_del_dia) > 0:
+        # Contar usuarios únicos
+        user_ids = set(invoice.get('userId') for invoice in las_facturas_del_dia)
+        print(f"Total de usuarios diferentes: {len(user_ids)}")
+        
+        assert len(user_ids) == 1, "SQL Injection fallida, se accedió a múltiples usuarios. Too bad"
