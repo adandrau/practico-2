@@ -356,7 +356,7 @@ describe('AuthService.generateJwt', () => {
 
 
 describe('Template injection correos', () => {
-  it('DEBERÍA FALLAR en main, html correo no tiene scripts inyectados', async () => {
+  it('DEBERÍA FALLAR en maim', async () => {
     const smoothOperator: User = {
       id: 'user-xss',
       email: 'test@test.com',
