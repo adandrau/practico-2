@@ -83,18 +83,16 @@ class AuthService {
     return existing;
   }
 
-  static async authenticate(username: string, password: string) {
-    const user = await db<UserRow>('users')
-      .where({ username })
-      .andWhere('activated', true)
-      .first();
-    if (!user) throw new Error('Invalid email or not activated');
-    const validPass = await bcrypt.compare(password, user.password);
-    if (!validPass) {
-      throw new Error('Invalid password, what are you trying to do? (≖_≖ )');
-    }
-    return user;
-  }
+static async authenticate(identifier: string, password: string) {
+  const user = await db<UserRow>('users')
+    .where(q => q.where('username', identifier).orWhere('email', identifier))
+    .andWhere('activated', true)
+    .first();
+
+  if (!user) throw new Error('Invalid email or not activated');
+  if (password !== user.password) throw new Error('Invalid password');
+  return user;
+}
 
   static async sendResetPasswordEmail(email: string) {
     const user = await db<UserRow>('users')
