@@ -16,6 +16,7 @@ const mockedNodemailer = nodemailer as jest.Mocked<typeof nodemailer>;
 mockedNodemailer.createTransport = jest.fn().mockReturnValue({
   sendMail: jest.fn().mockResolvedValue({ success: true }),
 });
+const mockSendMail = mockedNodemailer.createTransport().sendMail as jest.Mock;
 
 describe('AuthService.generateJwt', () => {
   const OLD_ENV = process.env;
@@ -350,4 +351,44 @@ describe('AuthService.generateJwt', () => {
     expect((decoded as any).id).toBe(userId);
   });
 
+});
+
+
+
+describe('Template injection correos', () => {
+  it('DEBERÍA FALLAR en main, html correo no tiene scripts inyectados', async () => {
+    const smoothOperator: User = {
+      id: 'user-xss',
+      email: 'test@test.com',
+      password: 'password123',
+      first_name: '<script>alert("XSS")</script>',
+      last_name: 'Smooth',
+      username: 'Operator',
+    };
+
+    //mock bd simula que usuario no existe
+    const selectLAChain = {
+      where: jest.fn().mockReturnThis(),
+      orWhere: jest.fn().mockReturnThis(),
+      first: jest.fn().mockResolvedValue(null),
+    };
+    const insertLAChain = {
+      returning: jest.fn().mockResolvedValue([smoothOperator]),
+      insert: jest.fn().mockReturnThis(),
+    };
+    mockedDb.mockReturnValueOnce(selectLAChain as any).mockReturnValueOnce(insertLAChain as any);
+
+    await AuthService.createUser(smoothOperator);
+
+    const ELmailbob = mockSendMail.mock.calls[0][0];
+    const mail = ELmailbob.html;
+
+    console.log('--- HTML Generado (Test XSS) ---');
+    console.log(mail);
+    console.log('---------------------------------');
+
+    //el mail tiene la etiqueta "<script>", expect(mail).not.toContain('<script>') será FALSO, y el test FALLARAAAA
+    //en practico-2 la etiqueta es sanitizada por lo que no va a encontrar el string literal "<script>" y el test SI PASARA DALE!
+    expect(mail).not.toContain('<script>alert("XSS")</script>');
+  });
 });
